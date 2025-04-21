@@ -1,0 +1,66 @@
+# config.yaml
+
+# Google Drive settings
+drive:
+  folder_id: ${DRIVE_FOLDER_ID}
+  credentials_json: ${GOOGLE_APPLICATION_CREDENTIALS}
+
+# OCR (Tesseract) settings
+ocr:
+  lang: eng
+  tesseract_cmd: ${TESSERACT_CMD}
+
+# Lender‑specific regex patterns
+lenders:
+  - name: example_bank
+    regex_patterns:
+      StatementDate:            "Statement Date[:\\s]+(?P<value>\\d{1,2}/\\d{1,2}/\\d{4})"
+      MostRecentPaymentDate:    "Payment Date[:\\s]+(?P<value>\\d{1,2}/\\d{1,2}/\\d{4})"
+      MostRecentPaymentAmount:  "Payment Amount[:\\s]*\\$(?P<value>[\\d,]+\\.\\d{2})"
+      AmountPrincipal:          "Principal Balance[:\\s]*\\$(?P<value>[\\d,]+\\.\\d{2})"
+      AmountInterest:           "Interest(?: Amount)?[:\\s]*\\$(?P<value>[\\d,]+\\.\\d{2})"
+      AmountTaxInsurance:       "Tax & Insurance[:\\s]*\\$(?P<value>[\\d,]+\\.\\d{2})"
+      AmountUnpaidBalance:      "Unpaid Balance[:\\s]*\\$(?P<value>[\\d,]+\\.\\d{2})"
+      AmountInterestRate:       "Interest Rate[:\\s]*(?P<value>\\d+\\.\\d+)%"
+      PastDueAmount:            "Past Due Amount[:\\s]*\\$(?P<value>[\\d,]+\\.\\d{2})"
+      PropertyAddress:          "Property Address[:\\s]*(?P<value>[^\\n]+)"
+
+# OpenAI LLM config
+llm:
+  model: ${OPENAI_MODEL}
+  api_key: ${OPENAI_API_KEY}
+  temperature: 0.0
+  max_tokens: 512
+
+# Output destination: choose 'sheets' or 'airtable'
+output:
+  type: ${OUTPUT_TYPE}
+
+  sheets:
+    spreadsheet_id: ${SPREADSHEET_ID}
+    credentials_json: ${GOOGLE_APPLICATION_CREDENTIALS}
+    headers:
+      - StatementFileName
+      - StatementDate
+      - MostRecentPaymentDate
+      - MostRecentPaymentAmount
+      - AmountPrincipal
+      - AmountInterest
+      - AmountTaxInsurance
+      - AmountUnpaidBalance
+      - AmountInterestRate
+      - PastDueAmount
+      - PropertyAddress
+
+  airtable:
+    base_id: ${AIRTABLE_BASE_ID}
+    table_name: ${AIRTABLE_TABLE_NAME}
+    token: ${AIRTABLE_TOKEN}
+
+# Logging
+logging:
+  level: ${LOG_LEVEL}
+
+# Review queue (flag incomplete records for manual check)
+review_queue:
+  enabled: true

@@ -14,17 +14,20 @@ class Writer:
         Config structure for Sheets:
         {
             'type': 'sheets',
-            'sheets': {'spreadsheet_id': '<ID>', 'credentials_json': '<path/to/creds.json>'}
+            'sheets': {
+                'spreadsheet_id': '<ID>',
+                'credentials_json': '<path/to/creds.json>',
+                'headers': ['col1', 'col2', ...]  # optional header row
+            }
         }
 
-        Config structure for Airtable (supports 'api_key' or new 'token'):
+        Config structure for Airtable:
         {
             'type': 'airtable',
             'airtable': {
                 'base_id': '<BASE_ID>',
                 'table_name': '<TABLE_NAME>',
-                'api_key': '<API_KEY>',       # legacy
-                'token': '<TOKEN>'            # new field name
+                'api_key': '<API_KEY>' or 'token': '<TOKEN>'
             }
         }
         """
@@ -33,18 +36,30 @@ class Writer:
 
         if writer_type == 'sheets':
             ss_cfg = config['sheets']
-            # Use service_account auth with credentials file
             from gspread import service_account
+
+            # Authenticate and open sheet
             client = service_account(filename=ss_cfg['credentials_json'])
             ss = client.open_by_key(ss_cfg['spreadsheet_id'])
             self._worksheet = ss.worksheet('Sheet1')
             self._mode = 'sheets'
 
+            # Setup headers if provided
+            self._headers = ss_cfg.get('headers', [])
+            if self._headers:
+                # Read first row
+                try:
+                    first_row = self._worksheet.row_values(1)
+                except Exception:
+                    first_row = []
+                # Insert headers if they differ
+                if first_row != self._headers:
+                    self._worksheet.insert_row(self._headers, index=1)
+
         elif writer_type == 'airtable':
             at_cfg = config['airtable']
             base_id = at_cfg['base_id']
             table_name = at_cfg['table_name']
-            # Support both 'api_key' and 'token'
             api_token = at_cfg.get('api_key') or at_cfg.get('token')
             if not api_token:
                 raise ValueError("Airtable config must include 'api_key' or 'token'.")
@@ -62,7 +77,11 @@ class Writer:
             record: Dict mapping field names to values.
         """
         if self._mode == 'sheets':
-            row = list(record.values())
+            if hasattr(self, '_headers') and self._headers:
+                # Order values according to headers
+                row = [record.get(col, '') for col in self._headers]
+            else:
+                row = list(record.values())
             self._worksheet.append_row(row)
 
         elif self._mode == 'airtable':
