@@ -64,3 +64,13 @@ logging:
 # Review queue (flag incomplete records for manual check)
 review_queue:
   enabled: true
+
+index:
+  persist_path: ./index.json
+
+notifier:
+  slack:
+    webhook_url: ${SLACK_WEBHOOK_URL}
+
+store:
+  persist_path: ./processed.json
