@@ -9,6 +9,8 @@ from modules.pdf_parser import PDFParser
 from modules.extractor import Extractor
 from modules.writer import Writer
 from modules.utils import setup_logging
+from modules.processing_chain import ProcessingChain
+from langfuse.callback import CallbackHandler
 
 
 def main():
@@ -60,10 +62,10 @@ def main():
     # Output settings
     out_cfg = config.get("output", {})
     out_cfg["type"] = (
-    os.environ.get("OUTPUT_TYPE")
-    or out_cfg.get("type")
-    or "sheets"
-)
+        os.environ.get("OUTPUT_TYPE")
+        or out_cfg.get("type")
+        or "sheets"
+    )
     if out_cfg.get("type") == "sheets":
         sheets = out_cfg.get("sheets", {})
         sheets["spreadsheet_id"] = (
@@ -88,14 +90,14 @@ def main():
             os.environ.get("AIRTABLE_TOKEN")
             or at.get("token")
         )
-    
+
     # 4) Initialize components
     watcher   = DriveWatcher(drive_cfg)
     parser    = PDFParser(ocr_cfg)
     extractor = Extractor(config.get("lenders", []), llm_cfg)
     writer    = Writer(out_cfg)
 
-    # 5) Process new PDFs
+    # 5) Process new PDFs (legacy loop)
     files = watcher.list_new_pdfs()
     logging.info(f"Found {len(files)} new PDF(s) to process")
     for meta in files:
@@ -108,6 +110,11 @@ def main():
             continue
         writer.append_record(record)
         logging.info(f"Appended record for {meta['name']}")
+
+    # 6) Run ProcessingChain for unified orchestration (without invoke)
+    chain = ProcessingChain(config)
+    result = chain({})
+    logging.info(f"Processed {result['processed']} file(s)")
 
 
 if __name__ == "__main__":

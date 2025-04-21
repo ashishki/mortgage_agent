@@ -3,7 +3,7 @@
 # Google Drive settings
 drive:
   folder_id: ${DRIVE_FOLDER_ID}
-  credentials_json: ${GOOGLE_APPLICATION_CREDENTIALS}
+  credentials_json: null
 
 # OCR (Tesseract) settings
 ocr:
@@ -34,7 +34,7 @@ llm:
 
 # Output destination: choose 'sheets' or 'airtable'
 output:
-  type: ${OUTPUT_TYPE}
+  type: sheets
 
   sheets:
     spreadsheet_id: ${SPREADSHEET_ID}

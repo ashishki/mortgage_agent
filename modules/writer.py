@@ -16,8 +16,10 @@ class Writer:
             'type': 'sheets',
             'sheets': {
                 'spreadsheet_id': '<ID>',
+                # Optional credentials_json path for service-account auth
                 'credentials_json': '<path/to/creds.json>',
-                'headers': ['col1', 'col2', ...]  # optional header row
+                # Optional list of header names
+                'headers': ['col1', 'col2', ...]
             }
         }
 
@@ -27,32 +29,35 @@ class Writer:
             'airtable': {
                 'base_id': '<BASE_ID>',
                 'table_name': '<TABLE_NAME>',
-                'api_key': '<API_KEY>' or 'token': '<TOKEN>'
+                # Either 'api_key' or 'token'
+                'api_key': '<API_KEY>'
             }
         }
         """
         self.config = config
-        writer_type = config.get('type')
+        writer_type = config.get("type", "")
+        writer_type = writer_type.split("#", 1)[0].strip()
 
         if writer_type == 'sheets':
             ss_cfg = config['sheets']
-            from gspread import service_account
+            # Use service_account if credentials_json provided, else authorize()
+            if ss_cfg.get('credentials_json'):
+                from gspread import service_account
+                client = service_account(filename=ss_cfg['credentials_json'])
+            else:
+                client = gspread.authorize(None)
 
-            # Authenticate and open sheet
-            client = service_account(filename=ss_cfg['credentials_json'])
             ss = client.open_by_key(ss_cfg['spreadsheet_id'])
             self._worksheet = ss.worksheet('Sheet1')
             self._mode = 'sheets'
 
-            # Setup headers if provided
-            self._headers = ss_cfg.get('headers', [])
+            # Optionally insert headers
+            self._headers = ss_cfg.get('headers', []) or []
             if self._headers:
-                # Read first row
                 try:
                     first_row = self._worksheet.row_values(1)
                 except Exception:
                     first_row = []
-                # Insert headers if they differ
                 if first_row != self._headers:
                     self._worksheet.insert_row(self._headers, index=1)
 
@@ -77,8 +82,8 @@ class Writer:
             record: Dict mapping field names to values.
         """
         if self._mode == 'sheets':
-            if hasattr(self, '_headers') and self._headers:
-                # Order values according to headers
+            if self._headers:
+                # Order values according to headers list
                 row = [record.get(col, '') for col in self._headers]
             else:
                 row = list(record.values())

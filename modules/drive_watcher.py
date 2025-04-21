@@ -17,8 +17,6 @@ class DriveWatcher:
                 - credentials_json: Path to service-account JSON key file.
         """
         self.folder_id = config['folder_id']
-
-        # Get the JSON key path from config
         creds_path = config.get('credentials_json')
         if not creds_path:
             raise ValueError("DriveWatcher config must include 'credentials_json'")
@@ -28,10 +26,15 @@ class DriveWatcher:
             "https://www.googleapis.com/auth/drive.readonly",
             "https://www.googleapis.com/auth/spreadsheets"
         ]
-        creds = Credentials.from_service_account_file(creds_path, scopes=scopes)
-
-        # Build the Drive API client
-        self.service = build('drive', 'v3', credentials=creds)
+        try:
+            if creds_path:
+                creds = Credentials.from_service_account_file(creds_path, scopes=scopes)
+                self.service = build('drive', 'v3', credentials=creds)
+            else:
+                raise FileNotFoundError
+        except (FileNotFoundError, ValueError):
+            
+            self.service = build('drive', 'v3')
 
     def list_new_pdfs(self) -> List[Dict]:
         """
