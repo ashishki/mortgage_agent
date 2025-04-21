@@ -1,4 +1,10 @@
+# .github/workflows/ci-cd.yml
 name: CI & CD
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
 
 on:
   push:
@@ -49,4 +55,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}/mortgage_agent:latest
+          tags: ghcr.io/${{ github.repository }}:latest
