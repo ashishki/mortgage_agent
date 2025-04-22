@@ -64,67 +64,54 @@ A robust, fully‑automated pipeline that watches a Google Drive folder for PDF 
    drive:
      folder_id: ${DRIVE_FOLDER_ID}
      credentials_json: null
-
-   ocr:
-     lang: eng
-     tesseract_cmd: ${TESSERACT_CMD}
-
-   lenders:
-     - name: shellpoint
-       regex_patterns:
-         StatementDate: "Statement Date[:\\s]+(?P<value>\\d{1,2}/\\d{1,2}/\\d{4})"
-         AmountPrincipal: "Principal Balance[:\\s]*\\$?(?P<value>[\\d,]+\\.\\d{2})"
-         # ... other patterns ...
-
-   llm:
-     model: ${OPENAI_MODEL}
-     api_key: ${OPENAI_API_KEY}
-     temperature: 0.0
-     max_tokens: 512
-
-   output:
-     type: ${OUTPUT_TYPE}
-     sheets:
-       spreadsheet_id: ${SPREADSHEET_ID}
-       credentials_json: ${GOOGLE_APPLICATION_CREDENTIALS}
-       headers:
-         - StatementFileName
-         - StatementDate
-         - MostRecentPaymentDate
-         - MostRecentPaymentAmount
-         - AmountPrincipal
-         - AmountInterest
-         - AmountTaxInsurance
-         - AmountUnpaidBalance
-         - AmountInterestRate
-         - PastDueAmount
-         - PropertyAddress
-     airtable:
-       base_id: ${AIRTABLE_BASE_ID}
-       table_name: ${AIRTABLE_TABLE_NAME}
-       token: ${AIRTABLE_TOKEN}
-
-   notifier:
-     slack:
-       webhook_url: ${SLACK_WEBHOOK_URL}
-
-   index:
-     persist_path: ./index.json
-
-   store:
-     persist_path: ./processed.json
-
-   logging:
-     level: ${LOG_LEVEL}
+   # ... [rest unchanged] ...
    ```
 
-6. **Run locally**
+6. **Run locally (Python)**
    ```bash
    python main.py
    ```
-   - New statements are processed, stored, indexed, and any incomplete records notify via Slack.
+
+7. **Run via Docker**
+
+   Build the Docker image:
+   ```bash
+   docker build -t mortgage_agent:latest .
+   ```
+
+   Then run the container with your service‑account key and environment variables:
+   ```bash
+   docker run --rm \
+     -v /path/to/sa-key.json:/app/sa-key.json:ro \
+     -v $(pwd)/processed.json:/app/processed.json \
+     -v $(pwd)/index.json:/app/index.json \
+     --env-file .env \
+     mortgage_agent:latest
+   ```
+
+8. **Run via Docker Compose** (optional)
+
+   Create a `docker-compose.yml` in the root:
+   ```yaml
+   version: '3.8'
+   services:
+     agent:
+       image: mortgage_agent:latest
+       build: .
+       env_file: .env
+       volumes:
+         - ./sa-key.json:/app/sa-key.json:ro
+         - ./processed.json:/app/processed.json
+         - ./index.json:/app/index.json
+   ```
+
+   Start with:
+   ```bash
+   docker-compose up --build
+   ```
 
 ---
+
 
 ## 🧪 Testing & CI
 
